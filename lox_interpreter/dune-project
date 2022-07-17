@@ -1,0 +1,26 @@
+(lang dune 3.3)
+
+(name lox_interpreter)
+
+(generate_opam_files true)
+
+(source
+ (github alexkassil/crafted_interpreter))
+
+(authors "Alex Kassil")
+
+(maintainers "Alex Kassil")
+
+(license LICENSE)
+
+(documentation https://url/to/documentation)
+
+(package
+ (name lox_interpreter)
+ (synopsis "A short synopsis")
+ (description "A longer description")
+ (depends ocaml dune)
+ (tags
+  (topics "to describe" your project)))
+
+; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
