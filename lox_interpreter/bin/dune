@@ -1,4 +1,4 @@
 (executable
  (public_name lox_interpreter)
  (name main)
- (libraries lox_interpreter))
+ (libraries lox_interpreter base stdio))
