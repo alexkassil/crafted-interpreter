@@ -1,2 +1,3 @@
-let () = print_endline "Hello, World!"
+open Base
 
+let () = print_endline "Hello, World!"

@@ -5,7 +5,7 @@
 (generate_opam_files true)
 
 (source
- (github alexkassil/crafted_interpreter))
+ (github alexkassil/crafted-interpreter))
 
 (authors "Alex Kassil")
 
