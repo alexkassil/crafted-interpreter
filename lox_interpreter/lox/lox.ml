@@ -11,7 +11,9 @@ let _lox_error line =
   report line ""
 
 (* TODO: Make this return a Result type*)
-let eval source:string = source
+let eval source:string =
+  let tokens = Scanner.scan_tokens source in
+  List.fold tokens ~init:"" ~f:(fun prev token -> prev ^ "\n" ^ Token.show token)
 
 let run_file filename =
   let file = In_channel.create filename in
