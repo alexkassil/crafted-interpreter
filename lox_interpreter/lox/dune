@@ -1,4 +1,6 @@
 (executable
  (public_name lox_interpreter)
  (name lox)
- (libraries base stdio core))
+ (libraries base stdio core)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq)))

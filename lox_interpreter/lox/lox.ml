@@ -31,7 +31,8 @@ let rec repl () =
   repl @@ print_endline @@ eval In_channel.(input_line_exn stdin)
 
 let () =
-  let _ = Token.LEFT_PAREN in
+  let l = {Token.tokenType = Token.LEFT_BRACE; lexeme = ""; literal = ""; line = 0; literal_to_string = (fun x -> x)} in
+  let _ = print_endline (Token.show l) in
   let args = Sys.get_argv () in
   let args_length = Array.length args in
   if (args_length = 2) then
