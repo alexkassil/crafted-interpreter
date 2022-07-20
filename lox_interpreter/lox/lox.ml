@@ -2,6 +2,14 @@
 (* open Stdio *)
 open Core
 
+let had_error = ref false
+
+let report = printf "[line %d] Error%s: %s"
+
+let _lox_error line =
+  had_error := true;
+  report line ""
+
 (* TODO: Make this return a Result type*)
 let eval source:string = source
 
@@ -12,19 +20,18 @@ let run_file filename =
   print_endline input;
   In_channel.close file;
   let _ = eval input in
-  ()
+  if !had_error then
+    exit 65
 
-let report = printf "[line %d] Error%s: %s"
-
-let lox_error line =
-  report line ""
 
 let rec repl () =
+  had_error := false;
   printf "> %!";
   (* read eval print loop *)
   repl @@ print_endline @@ eval In_channel.(input_line_exn stdin)
 
 let () =
+  let _ = Token.LEFT_PAREN in
   let args = Sys.get_argv () in
   let args_length = Array.length args in
   if (args_length = 2) then
