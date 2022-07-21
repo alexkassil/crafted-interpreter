@@ -4,15 +4,15 @@ open Core
 
 let had_error = ref false
 
-let report = printf "[line %d] Error%s: %s"
+let report = printf "[line %d] Error%s: %s\n"
 
-let _lox_error line =
+let lox_error line =
   had_error := true;
   report line ""
 
 (* TODO: Make this return a Result type*)
 let eval source:string =
-  let tokens = Scanner.scan_tokens source in
+  let tokens = Scanner.scan_tokens source lox_error in
   List.fold tokens ~init:"" ~f:(fun prev token -> prev ^ "\n" ^ Token.show token)
 
 let run_file filename =
