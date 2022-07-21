@@ -11,10 +11,10 @@ type t = {
 
 let is_at_end scanner = (scanner.current >= String.length scanner.source)
 
-let add_token ({source; start; current; line; tokens} as scanner) token_type =
-  printf "add_token: %s %d %d %d %s\n" source start current line (Token.show_tokenType token_type);
+let add_token ({source; start; current; line; tokens} as scanner) token_type literal =
+  (* printf "add_token: %s %d %d %d %s\n" source start current line (Token.show_token_type token_type); *)
   let text = String.sub source ~pos:start ~len:(current - start) in
-  let token = {tokenType = token_type; lexeme = text; literal = None; line = line} in
+  let token = {token_type = token_type; lexeme = text; literal = literal; line = line} in
   {scanner with tokens = token :: tokens}
 
 let check_token scanner char =
@@ -26,9 +26,9 @@ let check_token scanner char =
   else
     true, {scanner with current = scanner.current + 1}
 
-let check_add_token scanner char true_case false_case =
+let check_add_token scanner char true_case false_case literal =
   let matched, scanner = check_token scanner char in
-  add_token scanner (if matched then true_case else false_case)
+  add_token scanner (if matched then true_case else false_case) literal
 
 let advance scanner =
   (scanner.source.[scanner.current], {scanner with current = scanner.current + 1})
@@ -41,30 +41,49 @@ let rec handle_comment scanner =
   else
     handle_comment @@ snd @@ advance scanner
 
+let rec handle_string scanner error =
+  if is_at_end scanner then
+    (error scanner.line "Reached end of file while constructing string literal"; scanner)
+  else
+    let c, scanner = advance scanner in
+    if Char.(c = '"') then
+      let string_literal = String.sub scanner.source ~pos:(scanner.start + 1) ~len:(scanner.current - scanner.start - 2) in
+      add_token scanner STRING (Some (STRING_LITERAL string_literal))
+    else if Char.(c = '\n') then
+      handle_string {scanner with line = scanner.line + 1} error
+    else
+      handle_string scanner error
+
 let scan_token scanner error =
-  printf "scan_token: %s %d %d %d\n" scanner.source scanner.start scanner.current scanner.line;
+  (* printf "scan_token: %s %d %d %d\n" scanner.source scanner.start scanner.current scanner.line; *)
   let c, scanner = advance scanner in
   let scanner = match c with
-  | '(' -> add_token scanner LEFT_PAREN
-  | ')' -> add_token scanner RIGHT_PAREN
-  | '{' -> add_token scanner LEFT_BRACE
-  | '}' -> add_token scanner RIGHT_BRACE
-  | ',' -> add_token scanner COMMA
-  | '.' -> add_token scanner DOT
-  | '-' -> add_token scanner MINUS
-  | '+' -> add_token scanner PLUS
-  | ';' -> add_token scanner SEMICOLON
-  | '*' -> add_token scanner STAR
-  | '=' -> check_add_token scanner '=' EQUAL_EQUAL EQUAL
-  | '!' -> check_add_token scanner '=' BANG_EQUAL BANG
-  | '<' -> check_add_token scanner '=' LESS_EQUAL LESS
-  | '>' -> check_add_token scanner '=' GREATER_EQUAL GREATER
+  | '(' -> add_token scanner LEFT_PAREN None
+  | ')' -> add_token scanner RIGHT_PAREN None
+  | '{' -> add_token scanner LEFT_BRACE None
+  | '}' -> add_token scanner RIGHT_BRACE None
+  | ',' -> add_token scanner COMMA None
+  | '.' -> add_token scanner DOT None
+  | '-' -> add_token scanner MINUS None
+  | '+' -> add_token scanner PLUS None
+  | ';' -> add_token scanner SEMICOLON None
+  | '*' -> add_token scanner STAR None
+  | '=' -> check_add_token scanner '=' EQUAL_EQUAL EQUAL None
+  | '!' -> check_add_token scanner '=' BANG_EQUAL BANG None
+  | '<' -> check_add_token scanner '=' LESS_EQUAL LESS None
+  | '>' -> check_add_token scanner '=' GREATER_EQUAL GREATER None
   | '/' ->
     let matched, scanner = check_token scanner '/' in
     if matched then
       handle_comment scanner
     else
-      add_token scanner SLASH
+      add_token scanner SLASH None
+  | ' '
+  | '\r'
+  | '\t'
+    -> scanner
+  | '\n' -> {scanner with line = scanner.line + 1}
+  | '"' -> handle_string scanner error
   | c -> error scanner.line ("Unexpected character: " ^ String.of_char c); scanner
   in
   scanner
@@ -77,7 +96,7 @@ let scan_tokens source error =
   let rec go scanner =
     let scanner = {scanner with start = scanner.current} in
     if is_at_end scanner then
-      List.rev ((add_token {scanner with start = scanner.current} EOF).tokens)
+      List.rev ((add_token {scanner with start = scanner.current} EOF None).tokens)
     else
       let scanner = scan_token scanner error in
       go scanner

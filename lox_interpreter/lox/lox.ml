@@ -19,7 +19,8 @@ let run_file filename =
   let input = String.concat ~sep:"\n" input_lines in
   print_endline input;
   In_channel.close file;
-  let _ = eval input in
+  let output = eval input in
+  print_endline output;
   if !had_error then
     exit 65
 

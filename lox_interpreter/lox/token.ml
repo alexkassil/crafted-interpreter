@@ -1,6 +1,6 @@
 open Core
 
-type tokenType =
+type token_type =
   (* Single character tokens *)
   LEFT_PAREN | RIGHT_PAREN | LEFT_BRACE | RIGHT_BRACE |
   COMMA | DOT | MINUS | PLUS | SEMICOLON | SLASH | STAR |
@@ -22,7 +22,7 @@ type literal = STRING_LITERAL of string | NUMERIC_LITERAL of float | IDENTIFIER_
   [@@deriving show, eq]
 
 type t = {
-  tokenType : tokenType;
+  token_type : token_type;
   lexeme : string;
   literal: literal option;
   line : int;
@@ -35,4 +35,4 @@ let literal_option_show literal_option =
   | Some literal -> "Some " ^ show_literal literal
   [@@deriving show, eq]
 
-let my_show { tokenType; lexeme; literal ; line} = sprintf "{ Token.tokenType = %s; lexeme = \"%s\"; literal = %s; line = %d }" ( show_tokenType tokenType) lexeme (literal_option_show literal) line
+let my_show { token_type; lexeme; literal ; line} = sprintf "{ Token.token_type = %s; lexeme = \"%s\"; literal = %s; line = %d }" ( show_token_type token_type) lexeme (literal_option_show literal) line
