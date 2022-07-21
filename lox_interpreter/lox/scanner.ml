@@ -15,11 +15,13 @@ let add_token ({source; start; current; line; tokens} as scanner) token_type =
   let token = {tokenType = token_type; lexeme = text; literal = None; line = line} in
   {scanner with tokens = token :: tokens}
 
-let scan_token scanner =
-  (* let scanner = {scanner with current = scanner.current + 1} in *)
-  printf "scan_token: %s %d %d %d\n" scanner.source scanner.start scanner.current scanner.line;
+let advance scanner =
+  (scanner.source.[scanner.current], {scanner with current = scanner.current + 1})
 
-  let scanner = match scanner.source.[scanner.current] with
+let scan_token scanner =
+  printf "scan_token: %s %d %d %d\n" scanner.source scanner.start scanner.current scanner.line;
+  let c, scanner = advance scanner in
+  let scanner = match c with
    | '(' -> add_token scanner LEFT_PAREN
    | ')' -> add_token scanner RIGHT_PAREN
    | '{' -> add_token scanner LEFT_BRACE
@@ -30,7 +32,7 @@ let scan_token scanner =
    | '+' -> add_token scanner PLUS
    | ';' -> add_token scanner SEMICOLON
    | '*' -> add_token scanner STAR
-   | x -> failwith ("Unknown token: " ^ String.make 1 x)
+   | x -> failwith ("Unknown token: " ^ String.of_char x)
   in
   scanner
 
@@ -40,7 +42,7 @@ let from_source source = {source = source; start = 0; current = 0; line = 0; tok
 let scan_tokens source =
   let scanner = from_source source in
   let rec go scanner =
-    let scanner = {scanner with start = scanner.current; current = scanner.current + 1} in
+    let scanner = {scanner with start = scanner.current} in
     if (scanner.current >= String.length scanner.source) then
       List.rev ((add_token {scanner with start = scanner.current} EOF).tokens)
     else
