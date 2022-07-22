@@ -10,7 +10,7 @@ type token_type =
   GREATER | GREATER_EQUAL |
   LESS | LESS_EQUAL |
   (* Literals *)
-  IDENTIFIER | STRING | NUMBER |
+  IDENTIFIER | STRING | INTEGER | FLOAT |
   (* Keywords *)
   AND | CLASS | ELSE | FALSE | FUN | FOR | IF | NIL | OR |
   PRINT | RETURN | SUPER | THIS | TRUE | VAR | WHILE |
@@ -18,7 +18,7 @@ type token_type =
   EOF
   [@@deriving show, eq]
 
-type literal = STRING_LITERAL of string | NUMERIC_LITERAL of float | IDENTIFIER_LITERAL of string
+type literal = STRING_LITERAL of string | INTEGER_LITERAL of int | FLOAT_LITERAL of float | IDENTIFIER_LITERAL of string
   [@@deriving show, eq]
 
 type t = {
