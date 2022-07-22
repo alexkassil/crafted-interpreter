@@ -9,11 +9,31 @@ type t = {
   tokens: Token.t list;
 }
 
+let keywords =
+  Map.of_alist_exn (module String)
+  [
+    "and",    AND;
+    "class",  CLASS;
+    "else",   ELSE;
+    "false",  FALSE;
+    "for",    FOR;
+    "fun",    FUN;
+    "if",     IF;
+    "nil",    NIL;
+    "or",     OR;
+    "print",  PRINT;
+    "return", RETURN;
+    "super",  SUPER;
+    "this",   THIS;
+    "true",   TRUE;
+    "var",    VAR;
+    "while",  WHILE;
+  ]
 let is_at_end scanner = (scanner.current >= String.length scanner.source)
 
 let is_digit c = Char.('0' <= c && c <= '9')
 
-let _is_alpha c = Char.(('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z'))
+let is_alpha c = Char.(('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z'))
 
 let add_token ({source; start; current; line; tokens} as scanner) token_type literal =
   printf "add_token: %s %d %d %d %s\n" source start current line (Token.show_token_type token_type);
@@ -39,7 +59,7 @@ let advance scanner =
 
 let peek scanner = if is_at_end scanner then '\x00' else scanner.source.[scanner.current]
 
-let peek_next scanner =
+let _peek_next scanner =
   if (scanner.current + 1 >= String.length scanner.source) then
     '\x00'
   else
@@ -65,7 +85,8 @@ let rec handle_string scanner error =
       handle_string scanner error
 
 let rec handle_number scanner is_float error =
-  if Char.(peek scanner = '\n') || is_at_end scanner then
+  (* todo: add tests *)
+  if not ((is_digit (peek scanner)) || ((not is_float) && Char.(peek scanner = '.'))) then
     let numeric_literal = String.sub scanner.source ~pos:scanner.start ~len:(scanner.current - scanner.start) in
     if not is_float then
       add_token scanner INTEGER (Some (INTEGER_LITERAL (int_of_string numeric_literal)))
@@ -73,12 +94,22 @@ let rec handle_number scanner is_float error =
       add_token scanner FLOAT (Some (FLOAT_LITERAL (float_of_string numeric_literal)))
   else
     let c, scanner = advance scanner in
-    if not is_float && Char.(c = '.') && is_digit (peek_next scanner) then
+    if not is_float && Char.(c = '.') && is_digit (peek scanner) then
       handle_number scanner true error
     else if is_digit c then
       handle_number scanner is_float error
     else
-      (error scanner.line "Reached end of file while constructing numeric literal"; scanner)
+      (error scanner.line "Error while constructing numeric literal"; scanner)
+
+let rec handle_identifier scanner =
+  let c = peek scanner in
+  if not @@ is_alpha c || is_digit c || Char.(c = '_') then
+    let identifier_literal = String.sub scanner.source ~pos:scanner.start ~len:(scanner.current - scanner.start) in
+    match Map.find keywords identifier_literal with
+    | Some keyword -> add_token scanner keyword (Some (IDENTIFIER_LITERAL identifier_literal))
+    | None -> add_token scanner IDENTIFIER (Some (IDENTIFIER_LITERAL identifier_literal))
+  else
+    handle_identifier @@ snd @@ advance scanner
 
 
 let scan_token scanner error =
@@ -114,6 +145,8 @@ let scan_token scanner error =
   | c ->
     if is_digit c then
       handle_number scanner false error
+    else if is_alpha c then
+      handle_identifier scanner
     else
       (error scanner.line ("Unexpected character: " ^ String.of_char c); scanner)
   in
