@@ -103,7 +103,7 @@ let rec handle_number scanner is_float error =
 
 let rec handle_identifier scanner =
   let c = peek scanner in
-  if not @@ is_alpha c || is_digit c || Char.(c = '_') then
+  if not (is_alpha c || is_digit c || Char.(c = '_')) then
     let identifier_literal = String.sub scanner.source ~pos:scanner.start ~len:(scanner.current - scanner.start) in
     match Map.find keywords identifier_literal with
     | Some keyword -> add_token scanner keyword (Some (IDENTIFIER_LITERAL identifier_literal))
