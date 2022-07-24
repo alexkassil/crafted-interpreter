@@ -1,5 +1,5 @@
 open Core
-open Oo
+open Ast
 let had_error = ref false
 
 let report = printf "[line %d] Error%s: %s\n"
@@ -34,6 +34,7 @@ let rec repl () =
   repl @@ print_endline @@ eval In_channel.(input_line_exn stdin)
 
 let () =
+  print_endline (Ast.show_expression test);
   let args = Sys.get_argv () in
   let args_length = Array.length args in
   if (args_length = 2) then
