@@ -36,7 +36,7 @@ let is_digit c = Char.('0' <= c && c <= '9')
 let is_alpha c = Char.(('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z'))
 
 let add_token ({source; start; current; line; tokens} as scanner) token_type literal =
-  printf "add_token: %s %d %d %d %s\n" source start current line (Token.show_token_type token_type);
+  (* printf "add_token: %s %d %d %d %s\n" source start current line (Token.show_token_type token_type); *)
   let text = String.sub source ~pos:start ~len:(current - start) in
   let token = {token_type = token_type; lexeme = text; literal = literal; line = line} in
   {scanner with tokens = token :: tokens}
@@ -113,7 +113,7 @@ let rec handle_identifier scanner =
 
 
 let scan_token scanner error =
-  printf "scan_token: %s %d %d %d\n" scanner.source scanner.start scanner.current scanner.line;
+  (* printf "scan_token: %s %d %d %d\n" scanner.source scanner.start scanner.current scanner.line; *)
   let c, scanner = advance scanner in
   let scanner = match c with
   | '(' -> add_token scanner LEFT_PAREN None
@@ -131,6 +131,7 @@ let scan_token scanner error =
   | '<' -> check_add_token scanner '=' LESS_EQUAL LESS None
   | '>' -> check_add_token scanner '=' GREATER_EQUAL GREATER None
   | '/' ->
+    (* todo: add multiline comments *)
     let matched, scanner = check_token scanner '/' in
     if matched then
       handle_comment scanner

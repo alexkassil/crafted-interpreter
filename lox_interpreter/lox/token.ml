@@ -18,13 +18,13 @@ type token_type =
   EOF
   [@@deriving show, eq]
 
-type literal = STRING_LITERAL of string | INTEGER_LITERAL of int | FLOAT_LITERAL of float | IDENTIFIER_LITERAL of string
+type literal_token = STRING_LITERAL of string | INTEGER_LITERAL of int | FLOAT_LITERAL of float | IDENTIFIER_LITERAL of string
   [@@deriving show, eq]
 
 type t = {
   token_type : token_type;
   lexeme : string;
-  literal: literal option;
+  literal: literal_token option;
   line : int;
   }
   [@@deriving show, eq]
@@ -32,7 +32,7 @@ type t = {
 let literal_option_show literal_option =
   match literal_option with
   | None -> "None"
-  | Some literal -> "Some " ^ show_literal literal
+  | Some literal_token -> "Some " ^ show_literal_token literal_token
   [@@deriving show, eq]
 
 let my_show { token_type; lexeme; literal ; line} = sprintf "{ Token.token_type = %s; lexeme = \"%s\"; literal = %s; line = %d }" ( show_token_type token_type) lexeme (literal_option_show literal) line

@@ -1,5 +1,5 @@
 open Core
-
+open Oo
 let had_error = ref false
 
 let report = printf "[line %d] Error%s: %s\n"
@@ -11,7 +11,9 @@ let lox_error line =
 (* TODO: Make this return a Result type*)
 let eval source:string =
   let tokens = Scanner.scan_tokens source lox_error in
-  List.fold tokens ~init:"" ~f:(fun prev token -> prev ^ "\n" ^ Token.show token)
+  (* let _ast = Ast.parse tokens in *)
+  let str = List.fold tokens ~init:"" ~f:(fun prev token -> prev ^ "\n" ^ Token.show token) in
+  str
 
 let run_file filename =
   let file = In_channel.create filename in
