@@ -1,5 +1,3 @@
-(* open Token *)
-
 type literal =
   | Int of int
   | Float of float
