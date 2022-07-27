@@ -33,6 +33,5 @@ let literal_option_show literal_option =
   match literal_option with
   | None -> "None"
   | Some literal_token -> "Some " ^ show_literal_token literal_token
-  [@@deriving show, eq]
 
 let my_show { token_type; lexeme; literal ; line} = sprintf "{ Token.token_type = %s; lexeme = \"%s\"; literal = %s; line = %d }" ( show_token_type token_type) lexeme (literal_option_show literal) line

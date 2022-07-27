@@ -1,5 +1,6 @@
 open Core
 open Ast
+open Parser
 let had_error = ref false
 
 let report = printf "[line %d] Error%s: %s\n"
@@ -13,7 +14,9 @@ let eval source:string =
   let tokens = Scanner.scan_tokens source lox_error in
   (* let _ast = Ast.parse tokens in *)
   let str = List.fold tokens ~init:"" ~f:(fun prev token -> prev ^ "\n" ^ Token.show token) in
-  str
+  print_endline str;
+  let expr = Parser.expression {tokens = Array.of_list tokens; current = 0} in
+  Parser.show_expression expr
 
 let run_file filename =
   let file = In_channel.create filename in
