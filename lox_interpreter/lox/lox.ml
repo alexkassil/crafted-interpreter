@@ -16,7 +16,8 @@ let eval source:string =
   let str = List.fold tokens ~init:"" ~f:(fun prev token -> prev ^ "\n" ^ Token.show token) in
   print_endline str;
   let expr = Parser.expression {tokens = Array.of_list tokens; current = 0} in
-  Parser.show_expression expr
+  print_endline (Parser.show_expression expr);
+  Eval.show_lox_value (Eval.eval_expression expr)
 
 let run_file filename =
   let file = In_channel.create filename in
