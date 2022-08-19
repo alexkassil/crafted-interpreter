@@ -1,3 +1,5 @@
+open Core
+
 type literal =
   | Int of int
   | Float of float
@@ -37,7 +39,7 @@ let test = Binary (
   Grouping (Group (Literal (Float 45.67)))
 )
 
-let parenthesize expressions = "(" ^ String.concat " " expressions ^ ")"
+let parenthesize expressions = "(" ^ String.concat ~sep:" " expressions ^ ")"
 
 let show_literal = function
 | Int int -> string_of_int int
