@@ -15,6 +15,7 @@ let eval source =
   print_endline str;
   let expr = Parser.expression {tokens = Array.of_list tokens; current = 0} in
   print_endline (Parser.show_expression expr);
+  print_endline (Parser.show_expression_pp expr);
   Eval.show_lox_value (Eval.eval_expression expr)
 
 let run_file filename =

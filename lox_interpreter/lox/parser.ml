@@ -92,7 +92,10 @@ let matches parser token =
     false, parser
 
 let rec expression parser =
-  Equality (fst @@ equality parser)
+  fst @@ expression' parser
+and expression' parser =
+  let expr, parser = equality parser in
+  Equality expr, parser
 and equality parser =
   let rec equality_insert new_comparison builder = function
     | Comparison comparison -> builder new_comparison comparison
@@ -238,8 +241,42 @@ and primary parser =
   else
   let matched, parser = (matches parser LEFT_PAREN) in
   if matched then
-    let expr = expression parser in
-    (* TODO: consume til RIGHT_PAREN *)
+    let expr, parser = expression' parser in
     Group expr, advance parser
   else
     failwith ("Unknown token when parsing primary: " ^ Token.show (peek parser))
+
+let parenthesize expressions = "(" ^ String.concat ~sep:" " expressions ^ ")"
+
+let rec show_expression_pp = function
+  | Equality equality -> show_equality_pp equality
+and show_equality_pp = function
+  | Comparison comparison -> show_comparison_pp comparison
+  | Equal (equality, comparison) -> parenthesize ["=="; show_equality_pp equality; show_comparison_pp comparison]
+  | NotEqual (equality, comparison) -> parenthesize ["!="; show_equality_pp equality; show_comparison_pp comparison]
+    and show_comparison_pp = function
+  | Term term -> show_term_pp term
+  | Greater (comparison, term) -> parenthesize [">"; show_comparison_pp comparison; show_term_pp term]
+  | GreaterEqual (comparison, term) -> parenthesize [">="; show_comparison_pp comparison; show_term_pp term]
+  | Less (comparison, term) -> parenthesize ["<"; show_comparison_pp comparison; show_term_pp term]
+  | LessEqual (comparison, term) -> parenthesize ["<="; show_comparison_pp comparison; show_term_pp term]
+and show_term_pp  = function
+  | Factor factor -> show_factor_pp factor
+  | Plus (term, factor) -> parenthesize ["+"; show_term_pp term; show_factor_pp factor]
+  | Minus (term, factor) -> parenthesize ["-"; show_term_pp term; show_factor_pp factor]
+  and show_factor_pp = function
+  | Unary unary -> show_unary_pp unary
+  | Multiply (factor, unary) -> parenthesize ["*"; show_factor_pp factor; show_unary_pp unary]
+  | Divide (factor, unary) -> parenthesize ["/"; show_factor_pp factor; show_unary_pp unary]
+and show_unary_pp = function
+  | Primary primary -> show_primary_pp primary
+  | Not unary -> parenthesize ["!"; show_unary_pp unary]
+  | Negate unary -> parenthesize ["-"; show_unary_pp unary]
+and show_primary_pp = function
+  | Group expression -> show_expression_pp expression
+  | Int int -> string_of_int int
+  | Float float -> string_of_float float
+  | String string -> string
+  | True -> string_of_bool true
+  | False -> string_of_bool false
+  | Nil -> "nil"
