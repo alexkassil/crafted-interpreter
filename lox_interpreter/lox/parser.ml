@@ -1,15 +1,23 @@
 (*
 BNF grammar for parsing:
 
+program        → statement* EOF;
+
+statement      → exprStmt
+               | printStmt ;
+
+exprStmt       → expression ";" ;
+printStmt      → "print" expression ";" ;
+
 expression     → equality ;
 equality       → equality ( "!=" | "==" ) comparison
-               | comparison
+               | comparison ;
 comparison     → comparison ( ">" | ">=" | "<" | "<=" ) term
-               | term;
+               | term ;
 term           → term ( "-" | "+" ) factor
-               | factor;
+               | factor ;
 factor         → factor ( "/" | "*" ) unary
-               | unary;
+               | unary ;
 unary          → ( "!" | "-" ) unary
                | primary ;
 primary        → NUMBER | STRING | "true" | "false" | "nil"
@@ -19,7 +27,13 @@ primary        → NUMBER | STRING | "true" | "false" | "nil"
 open Token
 open Core
 
-type expression = Equality of equality
+type program = Statements of statement list
+and statement =
+  | ExpressionStatement of exprStmt
+  | PrintStatement of printStmt
+and exprStmt = Expression of expression
+and printStmt = Print of expression
+and expression = Equality of equality
 and equality =
   | Comparison of comparison
   | NotEqual of equality * comparison
