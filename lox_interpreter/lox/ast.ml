@@ -1,4 +1,4 @@
-open Core
+(* open Core
 
 type literal =
   | Int of int
@@ -68,4 +68,4 @@ and show_binary = function
   | (left, Plus, right) -> parenthesize ["+"; show_expression left; show_expression right]
   | (left, Minus, right) -> parenthesize ["-"; show_expression left; show_expression right]
   | (left, Multiply, right) -> parenthesize ["*"; show_expression left; show_expression right]
-  | (left, Divide, right) -> parenthesize ["/"; show_expression left; show_expression right]
+  | (left, Divide, right) -> parenthesize ["/"; show_expression left; show_expression right] *)

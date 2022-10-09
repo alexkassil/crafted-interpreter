@@ -1,5 +1,4 @@
 open Core
-(* open Ast *)
 open Parser
 let had_error = ref false
 
@@ -10,9 +9,8 @@ let lox_error line =
   report line ""
 
 (* TODO: Make this return a Result type*)
-let eval source:string =
+let eval source =
   let tokens = Scanner.scan_tokens source lox_error in
-  (* let _ast = Ast.parse tokens in *)
   let str = List.fold tokens ~init:"" ~f:(fun prev token -> prev ^ "\n" ^ Token.show token) in
   print_endline str;
   let expr = Parser.expression {tokens = Array.of_list tokens; current = 0} in
@@ -38,7 +36,6 @@ let rec repl () =
   repl @@ print_endline @@ eval In_channel.(input_line_exn stdin)
 
 let () =
-  (* print_endline (Ast.show_expression test); *)
   let args = Sys.get_argv () in
   let args_length = Array.length args in
   if (args_length = 2) then
