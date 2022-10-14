@@ -1,7 +1,12 @@
 (*
 BNF grammar for parsing:
 
-program        → statement* EOF;
+program        → declaration* EOF;
+
+declaration    → varDecl
+               | statement ;
+
+varDecl        → "var" IDENTIFIER ( "=" expression )? ";" ;
 
 statement      → exprStmt
                | printStmt ;
@@ -21,7 +26,7 @@ factor         → factor ( "/" | "*" ) unary
 unary          → ( "!" | "-" ) unary
                | primary ;
 primary        → NUMBER | STRING | "true" | "false" | "nil"
-               | "(" expression ")" ;
+               | "(" expression ")" | IDENTIFIER ;
 *)
 
 open Token
@@ -29,6 +34,7 @@ open Core
 
 type program = Statements of statement list
 and statement =
+  | VariableDeclarartion of Token.t * expression option
   | ExpressionStatement of expression
   | PrintStatement of expression
 (* and exprStatement = Expression of expression
@@ -64,6 +70,7 @@ and primary =
   | True
   | False
   | Nil
+  | Identifier of string
   [@@deriving show, eq]
 
 let show_statements statements = String.concat ~sep:"\n" (List.map ~f:show_statement statements)
@@ -98,7 +105,7 @@ let matches parser token =
 
 let consume parser token message =
   if check parser token then
-    advance parser
+    peek parser, advance parser
   else
     (parser.error (peek parser) message;
     raise ParseError;)
@@ -115,7 +122,24 @@ let rec synchronize parser =
     else
       synchronize parser
 
-let rec statement parser =
+let rec declaration parser =
+  (* TODO: try/catch block w/ ParseError and synchronize *)
+  let matched, parser = matches parser VAR in
+  if matched then
+    var_declaration parser
+  else
+    statement parser
+and var_declaration parser =
+  let name, parser = consume parser IDENTIFIER "Expect variable name" in
+  let matched, parser = matches parser EQUAL in
+  if matched then
+    let expr, parser = expression parser in
+    let _, parser = consume parser SEMICOLON "Expect ';' after variable declaration" in
+    VariableDeclarartion (name, Some expr), parser
+  else
+    let _, parser = consume parser SEMICOLON "Expect ';' after variable declaration" in
+    VariableDeclarartion (name, None), parser
+and statement parser =
   let matched, parser = (matches parser PRINT) in
   if matched then
     print_statement parser
@@ -123,11 +147,11 @@ let rec statement parser =
     expression_statement parser
 and print_statement parser =
     let expr, parser = expression parser in
-    let parser = consume parser SEMICOLON "Expect ';' after value." in
+    let _, parser = consume parser SEMICOLON "Expect ';' after value." in
     PrintStatement expr, parser
 and expression_statement parser =
     let expr, parser = expression parser in
-    let parser = consume parser SEMICOLON "Expect ';' after expression." in
+    let _, parser = consume parser SEMICOLON "Expect ';' after expression." in
     ExpressionStatement expr, parser
 and expression parser =
   let expr, parser = equality parser in
@@ -261,11 +285,11 @@ and primary parser =
   else if fst @@ matches parser TRUE then
     True, advance parser
   else if fst @@ matches parser FALSE then
-      False, advance parser
+    False, advance parser
   else if fst @@ matches parser STRING then
     match (peek parser).literal with
-      | Some (STRING_LITERAL string) -> String string, advance parser
-      | x -> failwith ("Invalid match on string token: " ^ literal_option_show x)
+      | Some (IDENTIFIER_LITERAL string) -> Identifier string, advance parser
+      | x -> failwith ("Invalid match on identifier token: " ^ literal_option_show x)
   else if fst @@ matches parser INTEGER then
     match (peek parser).literal with
       | Some (INTEGER_LITERAL int) -> Int int, advance parser
@@ -274,11 +298,15 @@ and primary parser =
     match (peek parser).literal with
       | Some (FLOAT_LITERAL float) -> Float float, advance parser
       | x -> failwith ("Invalid match on float token: " ^ literal_option_show x)
+  else if fst @@ matches parser IDENTIFIER then
+    match (peek parser).literal with
+      | Some (STRING_LITERAL string) -> String string, advance parser
+      | x -> failwith ("Invalid match on string token: " ^ literal_option_show x)
   else
   let matched, parser = (matches parser LEFT_PAREN) in
   if matched then
     let expr, parser = expression parser in
-    let parser = consume parser RIGHT_PAREN "Expect ')' after expression" in
+    let _, parser = consume parser RIGHT_PAREN "Expect ')' after expression" in
     Group expr, parser
   else
     failwith ("Unknown token when parsing primary: " ^ Token.show (peek parser))
@@ -288,15 +316,16 @@ let parse parser =
     if is_at_end parser then
       list
     else
-      let stmt, parser = statement parser in
+      let stmt, parser = declaration parser in
       helper parser (stmt :: list)
   in
-    helper parser []
+    List.rev @@ helper parser []
 
 let parenthesize expressions = "(" ^ String.concat ~sep:" " expressions ^ ")"
 
 let rec show_statement_pp = function
-  | PrintStatement expression -> show_expression_pp expression
+  | VariableDeclarartion (name, expression) -> parenthesize ["="; name.lexeme; Option.value (Option.(>>|) expression show_expression_pp) ~default:""]
+  | PrintStatement expression -> parenthesize ["print"; show_expression_pp expression]
   | ExpressionStatement expression -> show_expression_pp expression
 and show_expression_pp = function
   | Equality equality -> show_equality_pp equality
@@ -330,5 +359,6 @@ and show_primary_pp = function
   | True -> string_of_bool true
   | False -> string_of_bool false
   | Nil -> "nil"
+  | Identifier string -> string
 
 let show_statements_pp statements = String.concat ~sep:"\n" (List.map ~f:show_statement_pp statements)

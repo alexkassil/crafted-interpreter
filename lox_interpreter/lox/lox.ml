@@ -2,6 +2,8 @@ open Core
 open Parser
 let had_error = ref false
 
+let verbose = false
+
 let report = printf "[line %d] Error%s: %s\n"
 
 let lox_error line =
@@ -20,18 +22,18 @@ let lox_error_token (token : Token.t) =
 let eval source =
   let tokens = Scanner.scan_tokens source lox_error in
   let str = List.fold tokens ~init:"" ~f:(fun prev token -> prev ^ "\n" ^ Token.show token) in
-  print_endline str;
+  if verbose then print_endline str;
   let statements = Parser.parse {tokens = Array.of_list tokens; current = 0; error = lox_error_token} in
-  print_endline (Parser.show_statements statements);
-  print_endline (Parser.show_statements_pp statements);
+  if verbose then
+    (print_endline (Parser.show_statements statements);
+    print_endline (Parser.show_statements_pp statements));
   List.iter statements ~f:Eval.eval_statement
-  (* (Eval.eval_statement statement) *)
 
 let run_file filename =
   let file = In_channel.create filename in
   let input_lines = In_channel.input_lines file in
   let input = String.concat ~sep:"\n" input_lines in
-  print_endline input;
+  if verbose then print_endline input;
   In_channel.close file;
   eval input;
   if !had_error then

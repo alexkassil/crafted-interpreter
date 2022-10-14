@@ -104,7 +104,9 @@ and eval_primary = function
   | True -> Bool true
   | False -> Bool false
   | Nil -> Nil
+  | Identifier string -> String string
 
 let eval_statement = function
+  | VariableDeclarartion (name, expression) -> print_endline @@ Parser.parenthesize ["="; name.lexeme; Option.value (Option.(>>|) expression show_expression_pp) ~default:""]
   | PrintStatement expression -> printf "%s\n" @@ show_lox_value @@ eval_expression expression
   | ExpressionStatement expression -> ignore (eval_expression expression)
