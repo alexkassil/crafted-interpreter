@@ -104,3 +104,7 @@ and eval_primary = function
   | True -> Bool true
   | False -> Bool false
   | Nil -> Nil
+
+let eval_statement = function
+  | PrintStatement expression -> printf "%s\n" @@ show_lox_value @@ eval_expression expression
+  | ExpressionStatement expression -> ignore (eval_expression expression)

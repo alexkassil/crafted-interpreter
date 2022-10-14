@@ -29,10 +29,10 @@ open Core
 
 type program = Statements of statement list
 and statement =
-  | ExpressionStatement of exprStmt
-  | PrintStatement of printStmt
-and exprStmt = Expression of expression
-and printStmt = Print of expression
+  | ExpressionStatement of expression
+  | PrintStatement of expression
+(* and exprStatement = Expression of expression
+and printStatement = Print of expression *)
 and expression = Equality of equality
 and equality =
   | Comparison of comparison
@@ -66,10 +66,15 @@ and primary =
   | Nil
   [@@deriving show, eq]
 
+let show_statements statements = String.concat ~sep:"\n" (List.map ~f:show_statement statements)
+
 type t = {
   tokens: Token.t array;
   current: int;
+  error: Token.t -> string -> unit;
 }
+
+exception ParseError
 
 let peek parser = parser.tokens.(parser.current)
 
@@ -91,9 +96,40 @@ let matches parser token =
   else
     false, parser
 
-let rec expression parser =
-  fst @@ expression' parser
-and expression' parser =
+let consume parser token message =
+  if check parser token then
+    advance parser
+  else
+    (parser.error (peek parser) message;
+    raise ParseError;)
+
+let rec synchronize parser =
+  let token_type = (peek parser).token_type in
+  let parser = advance parser in
+  if Token.equal_token_type token_type Token.SEMICOLON then
+    parser
+  else
+    let token_type = (peek parser).token_type in
+    if List.exists ~f:(Token.equal_token_type token_type) [Token.CLASS;Token.FUN;Token.VAR;Token.FOR;Token.IF;Token.WHILE;Token.PRINT;Token.RETURN] then
+      parser
+    else
+      synchronize parser
+
+let rec statement parser =
+  let matched, parser = (matches parser PRINT) in
+  if matched then
+    print_statement parser
+  else
+    expression_statement parser
+and print_statement parser =
+    let expr, parser = expression parser in
+    let parser = consume parser SEMICOLON "Expect ';' after value." in
+    PrintStatement expr, parser
+and expression_statement parser =
+    let expr, parser = expression parser in
+    let parser = consume parser SEMICOLON "Expect ';' after expression." in
+    ExpressionStatement expr, parser
+and expression parser =
   let expr, parser = equality parser in
   Equality expr, parser
 and equality parser =
@@ -241,14 +277,28 @@ and primary parser =
   else
   let matched, parser = (matches parser LEFT_PAREN) in
   if matched then
-    let expr, parser = expression' parser in
-    Group expr, advance parser
+    let expr, parser = expression parser in
+    let parser = consume parser RIGHT_PAREN "Expect ')' after expression" in
+    Group expr, parser
   else
     failwith ("Unknown token when parsing primary: " ^ Token.show (peek parser))
 
+let parse parser =
+  let rec helper parser list =
+    if is_at_end parser then
+      list
+    else
+      let stmt, parser = statement parser in
+      helper parser (stmt :: list)
+  in
+    helper parser []
+
 let parenthesize expressions = "(" ^ String.concat ~sep:" " expressions ^ ")"
 
-let rec show_expression_pp = function
+let rec show_statement_pp = function
+  | PrintStatement expression -> show_expression_pp expression
+  | ExpressionStatement expression -> show_expression_pp expression
+and show_expression_pp = function
   | Equality equality -> show_equality_pp equality
 and show_equality_pp = function
   | Comparison comparison -> show_comparison_pp comparison
@@ -280,3 +330,5 @@ and show_primary_pp = function
   | True -> string_of_bool true
   | False -> string_of_bool false
   | Nil -> "nil"
+
+let show_statements_pp statements = String.concat ~sep:"\n" (List.map ~f:show_statement_pp statements)
